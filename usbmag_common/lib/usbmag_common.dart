@@ -162,11 +162,11 @@ mixin CUsbMagHelper {
                 ),
                 Expanded(
                   child: Obx(() => SfCartesianChart(
-                      title: const ChartTitle(
+                      title: ChartTitle(
                           text: "Oe", alignment: ChartAlignment.near),
-                      legend: const Legend(
+                      legend: Legend(
                           isVisible: true, position: LegendPosition.bottom),
-                      primaryXAxis: const NumericAxis(
+                      primaryXAxis: NumericAxis(
                           title: AxisTitle(text: "Time(S)"), isVisible: true),
                       series: mSingleOrThree.value == -1
                           ? <SplineSeries>[]
