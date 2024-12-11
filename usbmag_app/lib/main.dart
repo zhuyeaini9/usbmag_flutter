@@ -5,9 +5,9 @@ import 'dart:typed_data';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
-//import 'package:usb_serial/usb_serial.dart';
+import 'package:usb_serial/usb_serial.dart';
 // ignore: depend_on_referenced_packages
-import 'package:flutter_libserialport/flutter_libserialport.dart';
+//import 'package:flutter_libserialport/flutter_libserialport.dart';
 // ignore: depend_on_referenced_packages
 import 'package:usbmag_common/usbmag_common.dart';
 
@@ -25,39 +25,99 @@ class CGetX extends GetxController with CUsbMagHelper {
     super.onInit();
   }
 
-  void openDevice() async {
-    var port_name = "";
-    var ps = SerialPort.availablePorts;
-    if (ps.isNotEmpty) {
-      port_name = ps.first;
-    }
-    if (port_name == "") return;
+  // void openDevice() async {
+  //   mDebugText.value = "debug";
+  //   var port_name = "";
+  //   var ps = SerialPort.availablePorts;
+  //   mDebugText.value = "debug2";
+  //   if (ps.isNotEmpty) {
+  //     port_name = ps.first;
+  //     var dt = "port:";
+  //     for (var d in ps) {
+  //       dt += d;
+  //       dt += "---";
+  //     }
+  //     mDebugText.value = dt;
+  //   } else {
+  //     mDebugText.value = "no port";
+  //   }
+  //   if (port_name == "") return;
 
-    mPort = SerialPort(port_name);
-    bool? openResult = mPort?.openReadWrite();
-    if (!openResult!) {
-      Get.snackbar("Failed", "Failed to open device:${"test"}",
+  //   mPort = SerialPort(port_name);
+  //   bool? openResult = mPort?.openReadWrite();
+  //   if (!openResult!) {
+  //     Get.snackbar("Failed", "Failed to open device:${"test"}",
+  //         snackPosition: SnackPosition.BOTTOM);
+  //     return;
+  //   } else {
+  //     Get.snackbar("Success", "success to open device:${"test"}",
+  //         snackPosition: SnackPosition.BOTTOM);
+  //   }
+
+  //   mOpen.value = true;
+
+  //   //await mPort!.setDTR(true);
+  //   //await mPort!.setRTS(true);
+
+  //   SerialPortConfig config = mPort!.config;
+  //   config.baudRate = 115200;
+  //   config.bits = 8;
+  //   config.stopBits = 1;
+  //   config.parity = 0;
+  //   mPort!.config = config;
+
+  //   final reader = SerialPortReader(mPort!);
+  //   reader.stream.listen((Uint8List dataevent) {
+  //     String data = String.fromCharCodes(dataevent);
+
+  //     if (mSingleOrThree.value == -1) {
+  //       mSingleOrThreeFirstData += data;
+  //       checkSingle();
+  //       return;
+  //     }
+
+  //     if (mCurIndex.value == 0) {
+  //       handleRcData(data);
+  //     }
+
+  //     if (mCurIndex.value == 1) {
+  //       handleVcData(data);
+  //     }
+
+  //     if (mCurIndex.value == 2) {
+  //       handleCmdData(data);
+  //     }
+  //   });
+  // }
+  void openDevice() async {
+    List<UsbDevice> devices = await UsbSerial.listDevices();
+
+    if (devices.isEmpty) {
+      return;
+    }
+
+    mPort = await devices[0].create();
+    if (mPort == null) return;
+
+    bool openResult = await mPort!.open();
+    if (!openResult) {
+      Get.snackbar("Failed", "Failed to open device",
           snackPosition: SnackPosition.BOTTOM);
       return;
     } else {
-      Get.snackbar("Success", "success to open device:${"test"}",
+      Get.snackbar("Success", "success to open device",
           snackPosition: SnackPosition.BOTTOM);
     }
 
     mOpen.value = true;
 
-    //await mPort!.setDTR(true);
-    //await mPort!.setRTS(true);
+    await mPort!.setDTR(true);
+    await mPort!.setRTS(true);
 
-    SerialPortConfig config = mPort!.config;
-    config.baudRate = 115200;
-    config.bits = 8;
-    config.stopBits = 1;
-    config.parity = 0;
-    mPort!.config = config;
+    mPort!.setPortParameters(
+        115200, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
 
-    final reader = SerialPortReader(mPort!);
-    reader.stream.listen((Uint8List dataevent) {
+    mPort!.inputStream!.listen((Uint8List dataevent) {
       String data = String.fromCharCodes(dataevent);
 
       if (mSingleOrThree.value == -1) {
@@ -97,7 +157,7 @@ class CGetX extends GetxController with CUsbMagHelper {
     }
   }
 
-  SerialPort? mPort;
+  UsbPort? mPort;
 
   var mCurIndex = 0.obs;
 }
@@ -183,8 +243,9 @@ class MyHomePage extends StatelessWidget {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color.fromARGB(255, 72, 96, 107),
-          title: Obx(() =>
-              Text(gx.getLan() == 1 ? "MultiDimension USBMAG" : "多维科技 磁力计")),
+          title: Obx(() => gx.mDebug.value
+              ? Text(gx.mDebugText.value)
+              : Text(gx.getLan() == 1 ? "MultiDimension USBMAG" : "多维科技 磁力计")),
           actions: [
             Obx(() => gx.mOpen.value
                 ? Center(

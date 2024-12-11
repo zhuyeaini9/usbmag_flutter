@@ -99,6 +99,9 @@ mixin CUsbMagHelper {
 
   var mEsp32IP = "IP".obs;
 
+  var mDebugText = "".obs;
+  var mDebug = false.obs;
+
   void sendMsg(String msg, {bool setCur = false});
 
   Widget getMainPanel() {
